@@ -52,7 +52,7 @@ student.fix_marks() # Исправления плохих оценок на 5
 
 student.remove_chastisements() # Удаления всех замечаний
 
-student.set_commendation() # Добавления похвалы
+student.set_commendation('История', '15.07.2019') # Добавления похвалы
 ```
 
 ### Проверка изменений
