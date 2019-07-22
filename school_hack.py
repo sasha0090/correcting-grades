@@ -1,22 +1,30 @@
 from datetime import datetime
 from random import choice
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from datacenter.models import Schoolkid, Mark, Сhastisement, Lesson, \
     Commendation
 
 
-class SchoolHack():
+class SchoolHack:
     def __init__(self, full_name):
-        self.schoolkid = Schoolkid.objects.filter(full_name__contains=full_name).first()
+        try:
+            self.schoolkid = Schoolkid.objects.get(full_name__contains=full_name)
+        except ObjectDoesNotExist:
+            print('Не нашли ученика с таким параметром!')
+        except MultipleObjectsReturned:
+            print('В базе несколько учеников c таким параметром!')
 
     def fix_marks(self):
-        child = Mark.objects.filter(schoolkid=self.schoolkid, points__in=[2, 3]).update(points=5)
+        Mark.objects.filter(schoolkid=self.schoolkid, points__in=[2, 3]).update(points=5)
+        print(f'Исправили у {self.schoolkid} все 2 и 3 на 5')
 
     def remove_chastisements(self):
-        Сhastisement.objects.filter(schoolkid=self.schoolkid).all().delete()
+        Сhastisement.objects.filter(schoolkid=self.schoolkid).delete()
+        print('Удалили у {self.schoolkid} все замечания')
 
     def set_commendation(self, subject_title, date_commendation):
-        LIST_OF_COMMENDATIONS = [
+        list_of_commendations = [
             'Молодец!',
             'Отлично!',
             'Хорошо!',
@@ -47,14 +55,14 @@ class SchoolHack():
             'Ты растешь над собой!',
             'Ты многое сделал, я это вижу!',
             'Теперь у тебя точно все получится!',]
-        random_commendation = choice(LIST_OF_COMMENDATIONS)
+        random_commendation = choice(list_of_commendations)
 
-        first_lesson = Lesson.objects.filter(year_of_study=self.schoolkid.year_of_study,
-                                             group_letter=self.schoolkid.group_letter,
-                                             subject__title=subject_title).first()
+        lesson = Lesson.objects.filter(year_of_study=self.schoolkid.year_of_study,
+                                       group_letter=self.schoolkid.group_letter,
+                                       subject__title=subject_title).order_by('-date').first()
 
         Commendation.objects.create(text=random_commendation,
                                     schoolkid=self.schoolkid,
-                                    teacher=first_lesson.teacher,
-                                    subject=first_lesson.subject,
+                                    teacher=lesson.teacher,
+                                    subject=lesson.subject,
                                     created=datetime.strptime(date_commendation,'%d.%m.%Y'))
